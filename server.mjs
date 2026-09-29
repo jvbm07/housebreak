@@ -18,9 +18,20 @@ const STATIC = { "/": "housebreak.html", "/housebreak.html": "housebreak.html", 
 const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8" };
 const LOCAL_HOSTS = new Set([`localhost:${PORT}`, `127.0.0.1:${PORT}`]);
 
-function send(res, status, body, type = "application/json; charset=utf-8") {
-  res.writeHead(status, { "Content-Type": type, "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store" });
-  res.end(typeof body === "string" || Buffer.isBuffer(body) ? body : JSON.stringify(body));
+const HEADERS = { "X-Content-Type-Options": "nosniff", "Cache-Control": "no-store" };
+
+// Anything built from a request goes out through send(), always as JSON, never as HTML.
+// Escaping <, > and & keeps the JSON identical once parsed but inert if a browser ever renders it.
+const JSON_ESCAPES = { "<": "\\u003c", ">": "\\u003e", "&": "\\u0026" };
+function send(res, status, obj) {
+  res.writeHead(status, { ...HEADERS, "Content-Type": "application/json; charset=utf-8" });
+  res.end(JSON.stringify(obj).replace(/[<>&]/g, c => JSON_ESCAPES[c]));
+}
+
+// Only for the fixed files in STATIC.
+function sendFile(res, data, type) {
+  res.writeHead(200, { ...HEADERS, "Content-Type": type });
+  res.end(data);
 }
 
 function readBody(req, limit = 64 * 1024) {
@@ -44,7 +55,7 @@ const server = http.createServer(async (req, res) => {
   try {
     if (req.method === "GET" && STATIC[pathname]) {
       const file = STATIC[pathname];
-      return send(res, 200, await readFile(path.join(here, file)), TYPES[path.extname(file)]);
+      return sendFile(res, await readFile(path.join(here, file)), TYPES[path.extname(file)]);
     }
     if (req.method === "GET" && pathname === "/api/status") return send(res, 200, { grader: claudeStatus() });
     if (req.method === "POST" && pathname === "/api/grade") {
