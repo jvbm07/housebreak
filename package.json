@@ -1,0 +1,20 @@
+{
+  "name": "housebreak",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "A game about securing AI agents: write the rules your AI butler follows, and Claude grades them against OWASP agentic attacks.",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jvbm07/housebreak.git"
+  },
+  "engines": {
+    "node": ">=20.12"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.129.0"
+  }
+}
